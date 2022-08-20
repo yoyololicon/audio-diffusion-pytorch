@@ -330,7 +330,7 @@ class AttentionBase(nn.Module):
             k, v, mask = self.insert_null_tokens(k, v, mask=mask)
 
         # Compute similarity matrix with bias and mask
-        sim = einsum("... n d, ... m d -> ... n m", q, k)
+        sim = q @ k.transpose(-1, -2)
         sim = sim + attention_bias if exists(attention_bias) else sim
         sim = attention_mask(sim, mask) if exists(mask) else sim
 
@@ -338,7 +338,7 @@ class AttentionBase(nn.Module):
         attn = sim.softmax(dim=-1, dtype=torch.float32)
 
         # Compute values
-        out = einsum("... n j, ... j d -> ... n d", attn, v)
+        out = attn @ v
         out = rearrange(out, "b h n d -> b n (h d)")
         return self.to_out(out)
 
